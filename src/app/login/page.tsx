@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [role, setRole] = useState<"patient" | "staff">("patient");
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("sarah.c@example.com");
-  const [password, setPassword] = useState("••••••••••••");
+  const [password, setPassword] = useState("CareSync#2026");
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authSuccess, setAuthSuccess] = useState(false);
@@ -363,11 +363,12 @@ export default function LoginPage() {
                         />
                         <button
                           type="button"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 text-on-surface-variant hover:text-on-surface focus:outline-none flex items-center cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          title={showPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 z-10 p-1 rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container focus:outline-none flex items-center justify-center cursor-pointer transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[20px]">
+                          <span className="material-symbols-outlined text-[20px] select-none">
                             {showPassword ? "visibility_off" : "visibility"}
                           </span>
                         </button>
