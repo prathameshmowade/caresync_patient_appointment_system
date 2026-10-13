@@ -163,6 +163,51 @@ const CLINIC_SCHEDULE_COLLISIONS: Record<string, LockedTimeSlots> = {
 };
 
 /**
+ * Dynamic collision simulator for any date across any month
+ * Ensures realistic resource distribution whether booking in November, December, or future months.
+ */
+function getCollisionMapForDate(dateLabel: string): LockedTimeSlots {
+  // Check exact preset first
+  for (const key of Object.keys(CLINIC_SCHEDULE_COLLISIONS)) {
+    if (dateLabel.includes(key)) {
+      return CLINIC_SCHEDULE_COLLISIONS[key];
+    }
+  }
+
+  // Deterministic seed based on date string characters
+  let seed = 0;
+  for (let i = 0; i < dateLabel.length; i++) {
+    seed = (seed * 31 + dateLabel.charCodeAt(i)) % 1000;
+  }
+
+  // Generate varied room and equipment locks for future dates
+  const map: LockedTimeSlots = {};
+  const times = [
+    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+    '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM'
+  ];
+
+  times.forEach((t, idx) => {
+    const val = (seed + idx * 13) % 10;
+    if (val === 1 || val === 6) {
+      // Room collision
+      map[t] = { occupiedRooms: ['room-101', 'room-102', 'suite-3a'], inUseEquipment: [], isPhysicianBusy: false };
+    } else if (val === 3) {
+      // Equipment conflict
+      map[t] = { occupiedRooms: ['room-101'], inUseEquipment: ['ecg-cart-1', 'ultrasound-1'], isPhysicianBusy: false };
+    } else if (val === 8) {
+      // Physician rounds
+      map[t] = { occupiedRooms: [], inUseEquipment: [], isPhysicianBusy: true };
+    } else {
+      // Clear or partial room use
+      map[t] = { occupiedRooms: ['room-101'], inUseEquipment: [], isPhysicianBusy: false };
+    }
+  });
+
+  return map;
+}
+
+/**
  * Composite Resource Availability Engine
  * Availability = Provider_free ∩ Room_free ∩ Equipment_free ∩ Staff_free
  */
@@ -171,8 +216,7 @@ export function calculateCompositeAvailability(
   serviceId: string
 ): CompositeSlot[] {
   const service = CLINICAL_SERVICES.find((s) => s.id === serviceId) || CLINICAL_SERVICES[0];
-  const dateKey = Object.keys(CLINIC_SCHEDULE_COLLISIONS).find((k) => dateLabel.includes(k)) || 'Nov 9';
-  const collisionMap = CLINIC_SCHEDULE_COLLISIONS[dateKey] || {};
+  const collisionMap = getCollisionMapForDate(dateLabel);
 
   const allTimes = [
     { time: '09:00 AM', period: 'MORNING' as const },
